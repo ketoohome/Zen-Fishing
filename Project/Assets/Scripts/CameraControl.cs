@@ -13,7 +13,7 @@ public class CameraControl : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-
+        /*
         if (Input.GetMouseButtonDown(0)) {
             _mousePos = Input.mousePosition;
             _oldMousePos = _mousePos;
@@ -26,7 +26,20 @@ public class CameraControl : MonoBehaviour {
         if (Input.GetMouseButtonUp(0)) {
             _Angle = 0;
         }
-        _currAngle = Mathf.Lerp(_currAngle,_Angle,Time.deltaTime*10);
+        */
+        if (Input.GetMouseButtonDown(0))
+        {
+            _mousePos = Input.mousePosition;
+            _oldMousePos = _mousePos;
+        }
+        if (Input.GetMouseButton(0))
+        {
+            _mousePos = Input.mousePosition;
+            _Angle = (_mousePos - _oldMousePos).x * 0.1f;
+            _oldMousePos = _mousePos;
+        }
+
+        _currAngle = Mathf.Lerp(_currAngle,_Angle,Time.deltaTime*2);
         transform.Rotate(0,_currAngle,0);
     }
 }
