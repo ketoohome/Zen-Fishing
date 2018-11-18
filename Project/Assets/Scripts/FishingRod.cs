@@ -1,17 +1,18 @@
 ﻿using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
+using GameCommon;
+using TOOL;
+using MoreMountains.NiceVibrations;
 
-public class FishingRod : MonoBehaviour {
-	
+public class FishingRod : U3DSingleton<FishingRod>
+{
 	// Update is called once per frame
 	void Update () {
-        if (Input.GetMouseButtonDown(0))
-        {
+        if (Input.GetMouseButtonDown(0)) {
             cast();
         }
-        else if (Input.GetMouseButtonUp(0))
-        {
+        else if (Input.GetMouseButtonUp(0)) {
             leave();
         }
 
@@ -27,22 +28,30 @@ public class FishingRod : MonoBehaviour {
     #region Action
     // 甩杆
     void cast() {
+        EventMachine.SendEvent(EventID.EventID_FishingRod, true);
         GetComponent<Animator>().Play("cast");
     }
-
     // 收杆
     void leave() {
+        EventMachine.SendEvent(EventID.EventID_FishingRod, false);
         GetComponent<Animator>().Play("leave");
     }
     #endregion
+
+    #region Effect
     // 入水
     void OnIntoWater() {
+        Common.gIsFishing = true;
         transform.Find("wave_InWater").GetComponent<ParticleSystem>().Play();
         transform.Find("wave").GetComponent<ParticleSystem>().Play();
+        MMVibrationManager.Haptic(HapticTypes.LightImpact);
     }
     // 出水
     void OnOutWater() {
+        Common.gIsFishing = false;
         transform.Find("wave_OutWater").GetComponent<ParticleSystem>().Play();
         transform.Find("wave").GetComponent<ParticleSystem>().Stop();
+        MMVibrationManager.Haptic(HapticTypes.HeavyImpact);
     }
+    #endregion
 }

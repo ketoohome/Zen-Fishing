@@ -9,7 +9,7 @@ public class TargetPoint : MonoBehaviour {
 	
 	// Update is called once per frame
 	void Update () {
-        mTargetAccelerated = Vector3.Distance(transform.position,mOldPos) * Time.deltaTime;
+        mTargetAccelerated = Vector3.Distance(transform.position,mOldPos) / Time.deltaTime;
         mOldPos = transform.position;
     }
 }

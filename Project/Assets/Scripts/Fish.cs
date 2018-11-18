@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TOOL;
+using GameCommon;
+using MoreMountains.NiceVibrations;
+
+using Random = UnityEngine.Random;
 
 public class Fish : MonoBehaviour {
 
@@ -28,7 +31,7 @@ public class Fish : MonoBehaviour {
 
     #region Action
     void swim(Vector3 target,float speed = 1){
-        _targetpos = mTarget.transform.position;
+        _targetpos = target;
         _currpos = Vector3.Lerp(_currpos,_targetpos,Time.deltaTime * speed);
         transform.position = _currpos;
     }
@@ -72,36 +75,45 @@ public class Fish : MonoBehaviour {
 
         public override void Enter(Fish root)
         {
-            Debug.LogError("进入普通状态");
+
+            Debug.LogError("进入待机状态");
+            root.transform.Find("mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.black);
 
             _root = root;
             //获取一个靠近视野范围的随机目标,并设定为鱼的目标
             //root.SetTarget(SchoolFish.GetViewportTarget(),(TargetPoint target)=> OnTouchTarget(target));
-            root.StartCoroutine(ChangeTarget());
+            _root.StartCoroutine(ChangeTarget());
         }
 
         public override void Execute(Fish root)
         {
-            root.swim(root.mTarget.transform.position,1);
-            // TODO : 判断当前的目标的动量，如果动量大于某个值则进入Escape状态
-            if (root.mTarget.mTargetAccelerated > 0.1f) root.mStateMachine.ChangeState(State.Escape);
+            if (_root.mTarget != null) {
+                _root.swim(root.mTarget.transform.position, 1);
+                // 判断当前的目标的动量，如果动量大于某个值则进入Escape状态
+                if (root.mTarget.mTargetAccelerated > 0.1f) _root.mStateMachine.ChangeState(State.Escape);
+            }
         }
 
         public override void Exit(Fish root)
         {
-            root.StopAllCoroutines();
+            _root.StopAllCoroutines();
         }
         Fish _root;
 
         void OnTouchTarget(TargetPoint target) {
-            // TODO : 判断该目标是否为鱼钩，如果是鱼钩则进入EatHook状态
+            // 判断该目标是否为鱼钩，如果是鱼钩则进入EatHook状态
             if (target.name == "hook")  _root.mStateMachine.ChangeState(State.EatHook);
         }
 
+        /// <summary>
+        /// 定时改变目标
+        /// </summary>
+        /// <returns></returns>
         IEnumerator ChangeTarget() {
             while (true) {
-                _root.SetTarget(SchoolFish.GetViewportTarget(), (TargetPoint tar) => OnTouchTarget(tar));
-                yield return new WaitForSeconds(2.0f);
+                TargetPoint target = SchoolFish.GetViewportTarget();
+                if (target != null) _root.SetTarget(target, (TargetPoint tar) => OnTouchTarget(tar));
+                yield return new WaitForSeconds(3.0f);
             }
         }
     }
@@ -110,18 +122,21 @@ public class Fish : MonoBehaviour {
         public override void Enter(Fish root)
         {
             Debug.LogError("进入逃离状态");
+            root.transform.Find("mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.red);
+            MMVibrationManager.Haptic(HapticTypes.Failure);
+
             _root = root;
-            _targetPos = (root.transform.position - root.mTarget.transform.position).normalized * 5;
+            _targetPos = root.transform.position + new Vector3(Random.Range(-1,1), Random.Range(-1, 1), Random.Range(-1, 1)).normalized * 5;
+            _root.StartCoroutine(Return2Standy());
         }
         public override void Execute(Fish root)
         {
-            root.swim(_targetPos, 1);
+            _root.swim(_targetPos, 1);
         }
-
         Vector3 _targetPos;
         Fish _root; 
-        void OnTouchTarget(TargetPoint target)
-        {
+        IEnumerator Return2Standy() {
+            yield return new WaitForSeconds(5.0f);
             _root.mStateMachine.ChangeState(State.Standy);
         }
     }
@@ -130,25 +145,55 @@ public class Fish : MonoBehaviour {
         public override void Enter(Fish root)
         {
             Debug.LogError("进入吃鱼钩状态");
+            root.transform.Find("mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.green);
+
+            EventMachine.Register(EventID.EventID_FishingRod, OnFishingRod);
+
             _root = root;
-            root.SetTarget(root.mTarget, (TargetPoint target) => OnTouchTarget(target));
+            
+            _clock = 3;
         }
         public override void Execute(Fish root)
         {
-            root.swim(root.mTarget.transform.position, 1);
+            // root.swim(root.mTarget.transform.position, 1);
             // 判断当前的目标的动量，如果动量大于某个值则进入Escape状态
-            if (root.mTarget.mTargetAccelerated > 0.1f) root.mStateMachine.ChangeState(State.Escape);
+            //if (root.mTarget.mTargetAccelerated > 0.1f) root.mStateMachine.ChangeState(State.Escape);
+
+            // 倒计时3秒，超过三秒则逃脱
+            _clock -= Time.deltaTime;
+            if (_clock <= 0) _root.mStateMachine.ChangeState(State.Escape);
+        }
+
+        public override void Exit(Fish root)
+        {
+            EventMachine.Unregister(EventID.EventID_FishingRod, OnFishingRod);
+        }
+
+        void OnFishingRod(params object[] args) {
+            if (!(bool)args[0]) _root.mStateMachine.ChangeState(State.End);
         }
         Fish _root;
-
-        void OnTouchTarget(TargetPoint target)
-        {
-            // TODO : 如果触碰三次则变回普通状态
-            _root.mStateMachine.ChangeState(State.Standy);
-        }
+        float _clock;
     }
 
     class StateEnd : IState<Fish> {
+        public override void Enter(Fish root)
+        {
+            Debug.LogError("鱼被钓起状态");
+            _root = root;
+
+            root.transform.parent = root.mTarget.transform;
+            MMVibrationManager.Haptic(HapticTypes.Success);
+
+            root.StartCoroutine(Return2Stanty());
+        }
+
+        IEnumerator Return2Stanty() {
+            yield return new WaitForSeconds(5.0f);
+            _root.mStateMachine.ChangeState(State.Standy);
+        }
+
+        Fish _root;
     }
     #endregion
 }
