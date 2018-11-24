@@ -9,8 +9,6 @@ public class UIRoot : MonoBehaviour {
     // Use this for initialization
     void Start() {
         InitilizeState();
-
-
     }
 
     void OnDestroy()
@@ -48,7 +46,7 @@ public class UIRoot : MonoBehaviour {
         public override void Exit(UIRoot root)
         {
             EventMachine.Unregister(EventID.EventID_FishingRod, OnFishingRod);
-            root.transform.Find("Menu").gameObject.SetActive(false);
+            root.StartCoroutine(Change2Game());
         }
 
         void OnFishingRod(params object[] args)
@@ -57,6 +55,11 @@ public class UIRoot : MonoBehaviour {
         }
         UIRoot _Root;
 
+        IEnumerator Change2Game() {
+            _Root.transform.Find("Menu").GetComponent<Animator>().Play("End");
+            yield return new WaitForSeconds(0.45f);
+            _Root.transform.Find("Menu").gameObject.SetActive(false);
+        }
     }
 
     class StateGame : IState<UIRoot>
@@ -65,18 +68,25 @@ public class UIRoot : MonoBehaviour {
         {
             _Root = root;
             root.transform.Find("Game").gameObject.SetActive(true);
-            //EventMachine.Register(EventID.EventID_FishingRod, OnFishingRod);
+            EventMachine.Register(EventID.EventID_FishingSuccess, OnFishingSuccess);
         }
 
         public override void Exit(UIRoot root)
         {
-            root.transform.Find("Game").gameObject.SetActive(false);
-            //EventMachine.Unregister(EventID.EventID_FishingRod, OnFishingRod);
+            EventMachine.Unregister(EventID.EventID_FishingSuccess, OnFishingSuccess);
+            root.StartCoroutine(Change2End());
         }
 
-        void OnFishingRod(params object[] args)
+        void OnFishingSuccess(params object[] args)
         {
-            
+            _Root.mStateMechine.ChangeState(state.End);
+        }
+
+        IEnumerator Change2End()
+        {
+            _Root.transform.Find("Game").GetComponent<Animator>().Play("End");
+            yield return new WaitForSeconds(0.45f);
+            _Root.transform.Find("Game").gameObject.SetActive(false);
         }
         UIRoot _Root;
     }
@@ -85,13 +95,29 @@ public class UIRoot : MonoBehaviour {
     {
         public override void Enter(UIRoot root)
         {
+            _Root = root;
             root.transform.Find("End").gameObject.SetActive(true);
+            EventMachine.Register(EventID.EventID_FishingRod, OnFishingRod);
         }
 
         public override void Exit(UIRoot root)
         {
-            root.transform.Find("End").gameObject.SetActive(false);
+            EventMachine.Unregister(EventID.EventID_FishingRod, OnFishingRod);
+            root.StartCoroutine(Change2Game());
         }
+
+        void OnFishingRod(params object[] args)
+        {
+            if ((bool)args[0]) _Root.mStateMechine.ChangeState(state.Game);
+        }
+
+        IEnumerator Change2Game()
+        {
+            _Root.transform.Find("End").GetComponent<Animator>().Play("End");
+            yield return new WaitForSeconds(0.45f);
+            _Root.transform.Find("End").gameObject.SetActive(false);
+        }
+        UIRoot _Root;
     }
     #endregion
 }

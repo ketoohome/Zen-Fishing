@@ -39,6 +39,7 @@ public class Fish : MonoBehaviour {
 
     private void OnTriggerEnter(Collider other)
     {
+        if (mTarget == null) return;
         if (other.gameObject == mTarget.gameObject) {
             mTouchTargetAction(other.GetComponent<TargetPoint>());
         }
@@ -189,8 +190,10 @@ public class Fish : MonoBehaviour {
         }
 
         IEnumerator Return2Stanty() {
-            yield return new WaitForSeconds(5.0f);
-            _root.mStateMachine.ChangeState(State.Standy);
+            yield return new WaitForSeconds(0.5f);
+            EventMachine.SendEvent(GameCommon.EventID.EventID_FishingSuccess);
+            yield return new WaitForSeconds(2.0f);
+            Destroy(_root.gameObject);
         }
 
         Fish _root;

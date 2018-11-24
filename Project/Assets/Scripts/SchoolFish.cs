@@ -2,8 +2,24 @@
 using System.Collections.Generic;
 using UnityEngine;
 using TOOL;
+using GameCommon;
 
 public class SchoolFish : U3DSingleton<SchoolFish> {
+
+    private void Start()
+    {
+        StartCoroutine(OnCreateFish());
+    }
+
+    IEnumerator OnCreateFish() {
+        while (true) {
+            // TODO: is any fish in scene?
+            if (FindObjectsOfType<Fish>().Length < 2) {
+                Instantiate(Resources.Load<GameObject>("Fish"), GetOutViewportTarget().transform.position , Quaternion.identity);
+            }
+            yield return new WaitForSeconds(Random.Range(1,5));
+        }
+    }
 
     /// <summary>
     /// 获取一个目标位置

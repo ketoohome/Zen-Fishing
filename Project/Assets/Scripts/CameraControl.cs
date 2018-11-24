@@ -35,7 +35,7 @@ public class CameraControl : MonoBehaviour {
         if (Input.GetMouseButton(0))
         {
             _mousePos = Input.mousePosition;
-            _Angle = (_mousePos - _oldMousePos).x * 0.1f;
+            _Angle = (_mousePos - _oldMousePos).x * 0.02f;
             _oldMousePos = _mousePos;
         }
 
