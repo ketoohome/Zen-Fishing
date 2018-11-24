@@ -40,8 +40,8 @@
 			v2f vert (appdata v)
 			{
 				v2f o;
+				v.uv.x = v.uv.x * step(v.uv.x,0.99);
 				float temp = sin(v.uv.x * _Offset.z + _Time.z)*_Offset.x + cos(v.uv.x * _Offset.w - _Time.y*0.37)*_Offset.y;
-
 				o.vertex = UnityObjectToClipPos(v.vertex * (1 + temp));
 				o.uv = v.uv;
 				return o;
