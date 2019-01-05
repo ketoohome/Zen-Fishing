@@ -246,13 +246,10 @@ public class Fish : MonoBehaviour {
 
             root.transform.parent = root.mTarget.transform;
             root.StartCoroutine(Return2Stanty());
-
-            _SuccessHock = SuccessHock();
-            _root.StartCoroutine(_SuccessHock);
+            _root.StartCoroutine(SuccessHock());
         }
 
         IEnumerator Return2Stanty() {
-            _root.StopCoroutine(_SuccessHock);
             yield return new WaitForSeconds(0.5f);
             EventMachine.SendEvent(GameCommon.EventID.EventID_FishingSuccess);
             yield return new WaitForSeconds(2.0f);
@@ -265,7 +262,7 @@ public class Fish : MonoBehaviour {
                 yield return new WaitForSeconds(Random.Range(0.1f,0.5f));
             }
             
-        }IEnumerator _SuccessHock;
+        }
 
         Fish _root;
     }
