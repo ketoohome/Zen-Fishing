@@ -43,7 +43,11 @@ public class FishingRod : U3DSingleton<FishingRod>
     void OnIntoWater() {
         Common.gIsFishing = true;
         transform.Find("wave_InWater").GetComponent<ParticleSystem>().Play();
-        transform.Find("wave_InWater").GetComponent<AudioSource>().Play();
+        
+        AudioSource audio = transform.Find("wave_InWater").GetComponent<AudioSource>();
+        audio.pitch = Random.Range(0.75f,1.2f);
+        audio.volume = Random.Range(0.5f, 0.7f);
+        audio.Play();
         transform.Find("wave").GetComponent<ParticleSystem>().Play();
         MMVibrationManager.Haptic(Random.Range(0,1)==0 ? HapticTypes.Warning : HapticTypes.Success);
     }
@@ -62,7 +66,11 @@ public class FishingRod : U3DSingleton<FishingRod>
     void OnOutWaterWithFish() {
         Common.gIsFishing = false;
         transform.Find("wave_OutWater").GetComponent<ParticleSystem>().Play();
-        transform.Find("wave_OutWater").GetComponent<AudioSource>().Play();
+        AudioSource audio = transform.Find("wave_OutWater").GetComponent<AudioSource>();
+        audio.pitch = Random.Range(0.75f, 1.2f);
+        audio.volume = Random.Range(0.5f, 0.7f);
+        audio.Play();
+
         transform.Find("wave").GetComponent<ParticleSystem>().Stop();
         MMVibrationManager.Haptic(HapticTypes.MediumImpact);
     }
