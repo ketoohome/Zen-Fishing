@@ -168,7 +168,7 @@ AnimationClip:
   m_GenerateMotionCurves: 0
   m_Events:
   - time: 0.033333335
-    functionName: OnOutWater
+    functionName: OnOutWaterWithFish
     data: 
     objectReferenceParameter: {fileID: 0}
     floatParameter: 0

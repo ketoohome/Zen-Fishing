@@ -9,6 +9,10 @@ using Random = UnityEngine.Random;
 
 public class Fish : MonoBehaviour {
 
+    public int m_FishID = 1;
+    public int m_Length = 20;
+    public AnimationCurve m_EatAnimationCurve;
+
     // Use this for initialization
     void Start() {
         _targetpos = transform.position;
@@ -124,7 +128,7 @@ public class Fish : MonoBehaviour {
         {
             Debug.LogError("进入逃离状态");
             root.transform.Find("mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.red);
-            MMVibrationManager.Haptic(HapticTypes.Failure);
+            MMVibrationManager.Vibrate();
 
             _root = root;
             _targetPos = root.transform.position + new Vector3(Random.Range(-1,1), Random.Range(-1, 1), Random.Range(-1, 1)).normalized * 5;
@@ -149,10 +153,11 @@ public class Fish : MonoBehaviour {
             root.transform.Find("mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.green);
 
             EventMachine.Register(EventID.EventID_FishingRod, OnFishingRod);
-
             _root = root;
-            
-            _clock = 3;
+            _clock = Random.Range(2,7);
+
+            _EatHook = EatHook();
+            _root.StartCoroutine(_EatHook);
         }
         public override void Execute(Fish root)
         {
@@ -168,13 +173,69 @@ public class Fish : MonoBehaviour {
         public override void Exit(Fish root)
         {
             EventMachine.Unregister(EventID.EventID_FishingRod, OnFishingRod);
+            _root.StopCoroutine(_EatHook);
         }
 
+        /// <summary>
+        /// 鱼被钓到
+        /// </summary>
+        /// <param name="args"></param>
         void OnFishingRod(params object[] args) {
-            if (!(bool)args[0]) _root.mStateMachine.ChangeState(State.End);
+            if (!(bool)args[0]) {
+                if(_isHock) _root.mStateMachine.ChangeState(State.End);
+                else _root.mStateMachine.ChangeState(State.Escape);
+            } 
         }
         Fish _root;
         float _clock;
+        bool _isHock = false;
+        /// <summary> 
+        /// 播放鱼啄钩子的动画
+        /// </summary>
+        /// <param name="root"></param>
+        /// <returns></returns>
+        IEnumerator EatHook() {
+            Transform fish = _root.transform.GetChild(0);
+            Vector3 original = fish.position + fish.right * 0.1f;
+            Vector3 target = fish.position;
+            Vector3 pos = fish.position;
+
+            float clock = 1;
+            while (clock >= 0) {
+                float offset = _root.m_EatAnimationCurve.Evaluate(clock);
+                fish.position = Vector3.Lerp(pos, original, offset);
+                clock -= Time.deltaTime;
+                yield return null;
+            }
+
+            while (true) {
+                yield return new WaitForSeconds(Random.Range(0, 2));
+                clock = 1; float speed = Random.Range(5.0f,10.0f);
+                while (clock >= 0) {
+                    float offset = _root.m_EatAnimationCurve.Evaluate(clock);
+                    fish.position = Vector3.Lerp(original, target, offset);
+                    clock -= Time.deltaTime * speed;
+                    yield return null;
+                }
+                _isHock = true;
+
+                switch (Random.Range(0, 3)) {
+                    case 0: MMVibrationManager.Haptic(HapticTypes.LightImpact); break;
+                    case 1: MMVibrationManager.Haptic(HapticTypes.MediumImpact); break;
+                    case 2: MMVibrationManager.Haptic(HapticTypes.HeavyImpact); break;
+                }
+                MMVibrationManager.Haptic(HapticTypes.MediumImpact);
+                yield return new WaitForSeconds(Random.Range(1/speed,2/speed));
+                _isHock = false;
+                clock = 1;
+                while (clock >= 0) {
+                    float offset = _root.m_EatAnimationCurve.Evaluate(clock);
+                    fish.position = Vector3.Lerp( target, original, offset);
+                    clock -= Time.deltaTime * speed;
+                    yield return null;
+                }
+            }
+        } IEnumerator _EatHook;
     }
 
     class StateEnd : IState<Fish> {
@@ -184,17 +245,27 @@ public class Fish : MonoBehaviour {
             _root = root;
 
             root.transform.parent = root.mTarget.transform;
-            MMVibrationManager.Haptic(HapticTypes.Success);
-
             root.StartCoroutine(Return2Stanty());
+
+            _SuccessHock = SuccessHock();
+            _root.StartCoroutine(_SuccessHock);
         }
 
         IEnumerator Return2Stanty() {
+            _root.StopCoroutine(_SuccessHock);
             yield return new WaitForSeconds(0.5f);
             EventMachine.SendEvent(GameCommon.EventID.EventID_FishingSuccess);
             yield return new WaitForSeconds(2.0f);
             Destroy(_root.gameObject);
         }
+
+        IEnumerator SuccessHock() {
+            while (true) {
+                MMVibrationManager.Haptic(HapticTypes.Failure);
+                yield return new WaitForSeconds(Random.Range(0.1f,0.5f));
+            }
+            
+        }IEnumerator _SuccessHock;
 
         Fish _root;
     }
