@@ -34,7 +34,15 @@ public class FishingRod : U3DSingleton<FishingRod>
     // 收杆
     void leave() {
         EventMachine.SendEvent(EventID.EventID_FishingRod, false);
-        GetComponent<Animator>().Play("leave");
+        if(transform.GetComponentInChildren<Fish>())
+            GetComponent<Animator>().Play("leaveWithFish");
+        else GetComponent<Animator>().Play("leave");
+    }
+
+    // 收杆（有鱼）
+    void leaveWithFish() {
+        EventMachine.SendEvent(EventID.EventID_FishingRod, false);
+        GetComponent<Animator>().Play("leaveWithFish");
     }
     #endregion
 
@@ -57,7 +65,10 @@ public class FishingRod : U3DSingleton<FishingRod>
     {
         Common.gIsFishing = true;
         transform.Find("wave_InWater").GetComponent<ParticleSystem>().Play();
-        transform.Find("wave_InWater").GetComponent<AudioSource>().Play();
+        AudioSource audio = transform.Find("wave_InWater").GetComponent<AudioSource>();
+        audio.pitch = Random.Range(0.75f, 1.2f);
+        audio.volume = Random.Range(0.5f, 0.7f);
+        audio.Play();
         transform.Find("wave").GetComponent<ParticleSystem>().Play();
         MMVibrationManager.Haptic(Random.Range(0, 1) == 0 ? HapticTypes.Warning : HapticTypes.Success);
     }

@@ -82,7 +82,7 @@ public class Fish : MonoBehaviour {
         {
 
             Debug.LogError("进入待机状态");
-            root.transform.Find("mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.black);
+            root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.black);
 
             _root = root;
             //获取一个靠近视野范围的随机目标,并设定为鱼的目标
@@ -97,6 +97,8 @@ public class Fish : MonoBehaviour {
                 // 判断当前的目标的动量，如果动量大于某个值则进入Escape状态
                 if (root.mTarget.mTargetAccelerated > 0.1f) _root.mStateMachine.ChangeState(State.Escape);
             }
+
+            _root.transform.GetChild(0).localPosition = Vector3.Lerp(_root.transform.GetChild(0).localPosition,Vector3.zero,Time.deltaTime*10);
         }
 
         public override void Exit(Fish root)
@@ -127,7 +129,7 @@ public class Fish : MonoBehaviour {
         public override void Enter(Fish root)
         {
             Debug.LogError("进入逃离状态");
-            root.transform.Find("mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.red);
+            root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.red);
             MMVibrationManager.Vibrate();
 
             _root = root;
@@ -137,6 +139,7 @@ public class Fish : MonoBehaviour {
         public override void Execute(Fish root)
         {
             _root.swim(_targetPos, 1);
+            _root.transform.GetChild(0).localPosition = Vector3.Lerp(_root.transform.GetChild(0).localPosition, Vector3.zero, Time.deltaTime * 10);
         }
         Vector3 _targetPos;
         Fish _root; 
@@ -150,7 +153,7 @@ public class Fish : MonoBehaviour {
         public override void Enter(Fish root)
         {
             Debug.LogError("进入吃鱼钩状态");
-            root.transform.Find("mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.green);
+            root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.green);
 
             EventMachine.Register(EventID.EventID_FishingRod, OnFishingRod);
             _root = root;
@@ -196,14 +199,14 @@ public class Fish : MonoBehaviour {
         /// <returns></returns>
         IEnumerator EatHook() {
             Transform fish = _root.transform.GetChild(0);
-            Vector3 original = fish.position + fish.right * 0.1f;
-            Vector3 target = fish.position;
-            Vector3 pos = fish.position;
+            Vector3 original = fish.right * 0.1f * (fish.parent.localScale.x > 0 ? 1 : -1);
+            Vector3 target = Vector3.zero;
+            Vector3 pos = Vector3.zero;
 
             float clock = 1;
             while (clock >= 0) {
                 float offset = _root.m_EatAnimationCurve.Evaluate(clock);
-                fish.position = Vector3.Lerp(pos, original, offset);
+                fish.localPosition = Vector3.Lerp(pos, original, offset);
                 clock -= Time.deltaTime;
                 yield return null;
             }
@@ -213,7 +216,7 @@ public class Fish : MonoBehaviour {
                 clock = 1; float speed = Random.Range(5.0f,10.0f);
                 while (clock >= 0) {
                     float offset = _root.m_EatAnimationCurve.Evaluate(clock);
-                    fish.position = Vector3.Lerp(original, target, offset);
+                    fish.localPosition = Vector3.Lerp(original, target, offset);
                     clock -= Time.deltaTime * speed;
                     yield return null;
                 }
@@ -230,7 +233,7 @@ public class Fish : MonoBehaviour {
                 clock = 1;
                 while (clock >= 0) {
                     float offset = _root.m_EatAnimationCurve.Evaluate(clock);
-                    fish.position = Vector3.Lerp( target, original, offset);
+                    fish.localPosition = Vector3.Lerp( target, original, offset);
                     clock -= Time.deltaTime * speed;
                     yield return null;
                 }
