@@ -1,0 +1,6 @@
+ID,Name,rar,spd,vit,dex,int,vib,len,sce1,sce2,sce3,sce4
+uint,string,uint,uint,uint,uint,uint,string,uint,uint,uint,uint,uint
+1,鲤鱼,1,1,1,1,1,1,1,1,1,1,1
+2,鲶鱼,1,1,1,1,1,1,1,1,1,1,1
+3,鲈鱼,1,1,1,1,1,1,1,1,1,1,1
+4,皖鱼,1,1,1,1,1,1,1,1,1,1,1

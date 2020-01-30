@@ -1,0 +1,9 @@
+{
+    "name": "com.ketoo.vibrations",
+    "version": "1.0.0",
+    "unity": "2018.1",
+    "displayName": "Vibrations",
+    "description": "Vibrations for iOS",
+    "category": "Vibration",
+    "dependencies": {}
+}

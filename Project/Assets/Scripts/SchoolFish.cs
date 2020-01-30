@@ -1,16 +1,22 @@
 ﻿using System.Collections;
-using System.Collections.Generic;
 using UnityEngine;
 using TOOL;
-using GameCommon;
 
+/// <summary>
+/// 鱼群，创建鱼，指定鱼群的移动方向
+/// </summary>
 public class SchoolFish : U3DSingleton<SchoolFish> {
 
     private void Start()
     {
+        FishAttribute.GetFishAttributeFromCSV();
         StartCoroutine(OnCreateFish());
     }
 
+    /// <summary>
+    /// 创建鱼群
+    /// </summary>
+    /// <returns>The create fish.</returns>
     IEnumerator OnCreateFish() {
         while (true) {
             // TODO: is any fish in scene?
@@ -85,7 +91,4 @@ public class SchoolFish : U3DSingleton<SchoolFish> {
         float dot = Vector3.Dot(camera.transform.forward, dir);
         return (dot > 0 && viewpos.x >= 0 && viewpos.x <= 1 && viewpos.y >= 0 && viewpos.y <= 1);
     }
-
-
-    void CreateFish() { }
 }

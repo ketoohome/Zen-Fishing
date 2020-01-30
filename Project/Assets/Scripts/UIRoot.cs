@@ -6,17 +6,15 @@ using GameCommon;
 
 public class UIRoot : MonoBehaviour {
 
+    private void Awake()
+    {
+        gameObject.AddComponent<DataPool>();
+    }
+
     // Use this for initialization
     void Start() {
         InitilizeState();
     }
-
-    void OnDestroy()
-    {
-
-    }
-
-
 
     #region State
     enum state{
@@ -28,6 +26,7 @@ public class UIRoot : MonoBehaviour {
     IStateMachine<UIRoot> mStateMechine;
 
     void InitilizeState() {
+
         mStateMechine = new IStateMachine<UIRoot>(this);
         mStateMechine.Add(state.Menu, new StateMenu());
         mStateMechine.Add(state.Game, new StateGame());

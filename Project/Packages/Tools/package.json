@@ -1,0 +1,8 @@
+{
+    "name": "com.ketoo.tools",
+    "version": "1.0.0",
+    "displayName": "Tools",
+    "description": "Base Script tools",
+    "category": "Tool",
+    "dependencies": {}
+}

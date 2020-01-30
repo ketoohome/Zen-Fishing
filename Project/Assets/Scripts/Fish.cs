@@ -13,6 +13,8 @@ public class Fish : MonoBehaviour {
     public int m_Length = 20;
     public AnimationCurve m_EatAnimationCurve;
 
+    FishAttribute m_Attribute; // 鱼的属性
+
     // Use this for initialization
     void Start() {
         _targetpos = transform.position;
@@ -81,7 +83,7 @@ public class Fish : MonoBehaviour {
         public override void Enter(Fish root)
         {
 
-            Debug.LogError("进入待机状态");
+            Debug.LogWarning("进入待机状态");
             root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.black);
 
             _root = root;
@@ -128,7 +130,7 @@ public class Fish : MonoBehaviour {
     class StateEscape : IState<Fish> {
         public override void Enter(Fish root)
         {
-            Debug.LogError("进入逃离状态");
+            Debug.LogWarning("进入逃离状态");
             root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.red);
             MMVibrationManager.Vibrate();
 
@@ -152,7 +154,7 @@ public class Fish : MonoBehaviour {
     class StateEatHook : IState<Fish> {
         public override void Enter(Fish root)
         {
-            Debug.LogError("进入吃鱼钩状态");
+            Debug.LogWarning("进入吃鱼钩状态");
             root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.green);
 
             EventMachine.Register(EventID.EventID_FishingRod, OnFishingRod);
