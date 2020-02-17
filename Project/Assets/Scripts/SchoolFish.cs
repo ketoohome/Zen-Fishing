@@ -1,6 +1,7 @@
 ﻿using System.Collections;
 using UnityEngine;
 using TOOL;
+using GameCommon;
 
 /// <summary>
 /// 鱼群，创建鱼，指定鱼群的移动方向
@@ -19,14 +20,27 @@ public class SchoolFish : U3DSingleton<SchoolFish> {
     /// <returns>The create fish.</returns>
     IEnumerator OnCreateFish() {
         while (true) {
-            // TODO: is any fish in scene?
+            // 场景中鱼的数量最多不大雨2条
             if (FindObjectsOfType<Fish>().Length < 2) {
-                Instantiate(Resources.Load<GameObject>("Fish"), GetOutViewportTarget().transform.position , Quaternion.identity);
+                // 按照稀有程度和季节出现率刷出鱼
+                Data fishdata = NumericalTool.RandomChoose<Data>(DataPool.FindChild("FishType"),"rar");
+                // 按照季节出现概率判断是否刷出来
+                // TODO : 获得当前的季节,获得当前的天气...
+                string currSeason = "sce1"; 
+                if (NumericalTool.RandomBool(fishdata.FindChild(currSeason).GetValue<uint>())) {
+                    Vector3 pos = Vector3.zero;
+                    if (GetViewportTargetPos(ref pos,false)) {
+                        Fish fish = Instantiate(Resources.Load<Fish>("Fish" + fishdata.GetValue<uint>()), pos, Quaternion.identity);
+                        // 给鱼的属性进行赋值
+                        fish.SetAttribute(fishdata);
+                    }
+                }
             }
             yield return new WaitForSeconds(Random.Range(1,5));
         }
     }
 
+    /*
     /// <summary>
     /// 获取一个目标位置
     /// </summary>
@@ -60,6 +74,28 @@ public class SchoolFish : U3DSingleton<SchoolFish> {
             num++;
         }
         return target;
+    }
+    */
+
+    /// <summary>
+    /// 随机摄像机内的一个目标
+    /// </summary>
+    /// <returns>The out viewport target.</returns>
+    public static bool GetViewportTargetPos(ref Vector3 pos, bool isInViewPort) {
+        Vector3 target = GameObject.Find("envrionment").transform.position;
+        for(int i = 0;i<20;i++)
+        {
+            float angle = Random.Range(0,360);
+            float temp = Random.Range(2.0f,5.0f);
+            target.x += Mathf.Sin(angle)*temp;
+            target.z += Mathf.Cos(angle)*temp;
+            //target.y += Random.Range(-1.0f,0.0f);
+            if (IsInViewport(target, Camera.main) == isInViewPort) {
+                pos = target;
+                return true;
+            }
+        }
+        return false;
     }
 
     /// <summary>

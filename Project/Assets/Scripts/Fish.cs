@@ -10,10 +10,20 @@ using Random = UnityEngine.Random;
 public class Fish : MonoBehaviour {
 
     public int m_FishID = 1;
-    public int m_Length = 20;
     public AnimationCurve m_EatAnimationCurve;
-
     FishAttribute m_Attribute; // 鱼的属性
+    /// <summary>
+    /// 给鱼属性赋值
+    /// </summary>
+    /// <param name="data">Data.</param>
+    public void SetAttribute(Data data) {
+        m_Attribute = FishAttribute.CreateFishAttribute(data);
+        // 尺寸按照正太分布随机选择
+        float snd = (float)NumericalTool.StandardNormalDistributionQ(0.8f,1.0f,1.2f);
+        snd = Mathf.Clamp(snd, 0.3f,3.0f);
+        m_Attribute._len = (uint)(m_Attribute._len * snd);
+        transform.localScale = Vector3.one * (m_Attribute._len * 0.01f);
+    }
 
     // Use this for initialization
     void Start() {
@@ -36,8 +46,9 @@ public class Fish : MonoBehaviour {
      */
 
     #region Action
-    void swim(Vector3 target,float speed = 1){
+    void swim(Vector3 target){
         _targetpos = target;
+        float speed = m_Attribute._spd *0.1f;
         _currpos = Vector3.Lerp(_currpos,_targetpos,Time.deltaTime * speed);
         transform.position = _currpos;
     }
@@ -51,12 +62,32 @@ public class Fish : MonoBehaviour {
         }
     }
 
+    bool FoundTarget() { 
+        if(NumericalTool.RandomBool(m_Attribute._int)) {
+            mTarget = null;
+            return false;
+        }
+        TargetPoint[] targets = GameObject.FindObjectsOfType<TargetPoint>();
+        foreach(TargetPoint target in targets)
+        {
+            if (target.name == "hook") {
+                if (target.enabled) {
+                    SetTarget(target, (TargetPoint tar) => { if (target.name == "hook") mStateMachine.ChangeState(State.EatHook); });
+                }
+                return true;
+            }
+        }
+        return false;
+    }
+
     void SetTarget(TargetPoint target, Action<TargetPoint> action) {
         mTarget = target;
         mTouchTargetAction = action;
     }
     TargetPoint mTarget;
     Action<TargetPoint> mTouchTargetAction;
+
+    Vector3 mTargetPos;
 
     #endregion
 
@@ -82,36 +113,42 @@ public class Fish : MonoBehaviour {
 
         public override void Enter(Fish root)
         {
-
+            EventMachine.Register(EventID.EventID_FishingRod, OnFishingRod);
             Debug.LogWarning("进入待机状态");
             root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.black);
 
             _root = root;
             //获取一个靠近视野范围的随机目标,并设定为鱼的目标
-            //root.SetTarget(SchoolFish.GetViewportTarget(),(TargetPoint target)=> OnTouchTarget(target));
             _root.StartCoroutine(ChangeTarget());
         }
 
         public override void Execute(Fish root)
         {
             if (_root.mTarget != null) {
-                _root.swim(root.mTarget.transform.position, 1);
+                _root.swim(root.mTarget.transform.position);
                 // 判断当前的目标的动量，如果动量大于某个值则进入Escape状态
                 if (root.mTarget.mTargetAccelerated > 0.1f) _root.mStateMachine.ChangeState(State.Escape);
             }
-
+            else {
+                _root.swim(root.mTargetPos);
+            }
+            // TODO 根据鱼钩的距离和动能来计算
             _root.transform.GetChild(0).localPosition = Vector3.Lerp(_root.transform.GetChild(0).localPosition,Vector3.zero,Time.deltaTime*10);
         }
 
         public override void Exit(Fish root)
         {
+            EventMachine.Unregister(EventID.EventID_FishingRod, OnFishingRod);
             _root.StopAllCoroutines();
         }
         Fish _root;
 
-        void OnTouchTarget(TargetPoint target) {
-            // 判断该目标是否为鱼钩，如果是鱼钩则进入EatHook状态
-            if (target.name == "hook")  _root.mStateMachine.ChangeState(State.EatHook);
+        void OnFishingRod(params object[] args)
+        {
+            if (!(bool)args[0])
+            {
+                if (_root.mTarget != null) _root.mStateMachine.ChangeState(State.Escape);
+            }
         }
 
         /// <summary>
@@ -120,8 +157,15 @@ public class Fish : MonoBehaviour {
         /// <returns></returns>
         IEnumerator ChangeTarget() {
             while (true) {
-                TargetPoint target = SchoolFish.GetViewportTarget();
-                if (target != null) _root.SetTarget(target, (TargetPoint tar) => OnTouchTarget(tar));
+                //吃鱼饵
+                if (!_root.FoundTarget()) {
+                    //如果没有吃鱼饵，随机位置
+                    Vector3 targetpos = _root.transform.position;
+                    if (SchoolFish.GetViewportTargetPos(ref targetpos, true))
+                    {
+                        _root.mTargetPos = targetpos;
+                    }
+                }
                 yield return new WaitForSeconds(3.0f);
             }
         }
@@ -131,16 +175,18 @@ public class Fish : MonoBehaviour {
         public override void Enter(Fish root)
         {
             Debug.LogWarning("进入逃离状态");
+            root.mTarget = null;
             root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.red);
             MMVibrationManager.Vibrate();
 
             _root = root;
+            // TODO ：位置需要重新设计
             _targetPos = root.transform.position + new Vector3(Random.Range(-1,1), Random.Range(-1, 1), Random.Range(-1, 1)).normalized * 5;
             _root.StartCoroutine(Return2Standy());
         }
         public override void Execute(Fish root)
         {
-            _root.swim(_targetPos, 1);
+            _root.swim(_targetPos);
             _root.transform.GetChild(0).localPosition = Vector3.Lerp(_root.transform.GetChild(0).localPosition, Vector3.zero, Time.deltaTime * 10);
         }
         Vector3 _targetPos;

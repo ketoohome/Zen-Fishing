@@ -30,6 +30,8 @@ public class FishingRod : U3DSingleton<FishingRod>
     void cast() {
         EventMachine.SendEvent(EventID.EventID_FishingRod, true);
         GetComponent<Animator>().Play("cast");
+
+        transform.Find("Rod/line/hook").GetComponent<TargetPoint>().enabled = true;
     }
     // 收杆
     void leave() {
@@ -37,12 +39,14 @@ public class FishingRod : U3DSingleton<FishingRod>
         if(transform.GetComponentInChildren<Fish>())
             GetComponent<Animator>().Play("leaveWithFish");
         else GetComponent<Animator>().Play("leave");
+        transform.Find("Rod/line/hook").GetComponent<TargetPoint>().enabled = false;
     }
 
     // 收杆（有鱼）
     void leaveWithFish() {
         EventMachine.SendEvent(EventID.EventID_FishingRod, false);
         GetComponent<Animator>().Play("leaveWithFish");
+        transform.Find("Rod/line/hook").GetComponent<TargetPoint>().enabled = true;
     }
     #endregion
 
