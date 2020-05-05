@@ -115,7 +115,7 @@ public class Fish : MonoBehaviour {
         {
             EventMachine.Register(EventID.EventID_FishingRod, OnFishingRod);
             Debug.LogWarning("进入待机状态");
-            root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.black);
+            //root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.black);
 
             _root = root;
             //获取一个靠近视野范围的随机目标,并设定为鱼的目标
@@ -174,15 +174,17 @@ public class Fish : MonoBehaviour {
     class StateEscape : IState<Fish> {
         public override void Enter(Fish root)
         {
+            EventMachine.SendEvent(EventID.EventID_UnHook, root.gameObject);
             Debug.LogWarning("进入逃离状态");
             root.mTarget = null;
-            root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.red);
+            //root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.red);
             MMVibrationManager.Vibrate();
 
             _root = root;
             // TODO ：位置需要重新设计
             _targetPos = root.transform.position + new Vector3(Random.Range(-1,1), Random.Range(-1, 1), Random.Range(-1, 1)).normalized * 5;
             _root.StartCoroutine(Return2Standy());
+
         }
         public override void Execute(Fish root)
         {
@@ -201,7 +203,8 @@ public class Fish : MonoBehaviour {
         public override void Enter(Fish root)
         {
             Debug.LogWarning("进入吃鱼钩状态");
-            root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.green);
+            EventMachine.SendEvent(EventID.EventID_EatHook,root.gameObject);
+            //root.transform.Find("mesh/mesh").GetComponent<Renderer>().material.SetColor("_TintColor", Color.green);
 
             EventMachine.Register(EventID.EventID_FishingRod, OnFishingRod);
             _root = root;
@@ -292,6 +295,7 @@ public class Fish : MonoBehaviour {
     class StateEnd : IState<Fish> {
         public override void Enter(Fish root)
         {
+            EventMachine.SendEvent(GameCommon.EventID.EventID_PullFish,root.gameObject);
             Debug.LogError("鱼被钓起状态");
             _root = root;
 
